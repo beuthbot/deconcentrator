@@ -1,0 +1,7 @@
+- name: install qemu-guest-agent
+  apt:
+    name: "{{ packages }}"
+  vars:
+     packages:
+       - qemu-guest-agent
+

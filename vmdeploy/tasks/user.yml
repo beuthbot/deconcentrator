@@ -1,0 +1,6 @@
+- name: "remove user accounts"
+  user:
+    name: tiberius
+    state: absent
+    remove: yes
+

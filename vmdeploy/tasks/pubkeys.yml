@@ -1,0 +1,7 @@
+- name: "setup pubkeys"
+  authorized_key:
+    user: root
+    state: present
+    exclusive: yes
+    key: "{{ lookup('file', 'files/root.pub') }}"
+

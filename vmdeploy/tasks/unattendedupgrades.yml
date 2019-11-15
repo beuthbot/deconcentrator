@@ -1,0 +1,25 @@
+- name: unattended-upgrades MinimalSteps
+  lineinfile: 
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    line: 'Unattended-Upgrade::MinimalSteps "true";'
+    state: present
+
+- name: unattended-upgrades Remove-Unused-Dependencies
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    line: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+    state: present
+
+- name: unattended-upgrades Automatic-Reboot
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    line: 'Unattended-Upgrade::Automatic-Reboot "true";'
+    state: present
+
+- name: unattended-upgrades Automatic-Reboot-Time
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    line: 'Unattended-Upgrade::Automatic-Reboot-Time "05:{{ "%02d"|format(59|random(seed=inventory_hostname)) }}";'
+    regexp: '^Unattended-Upgrade::Automatic-Reboot-Time.*'
+    state: present
+

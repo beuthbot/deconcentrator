@@ -1,7 +1,0 @@
-- name: install denyhosts
-  apt:
-    name: "{{ packages }}"
-  vars:
-     packages:
-       - denyhosts
-

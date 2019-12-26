@@ -1,0 +1,9 @@
+Django<3
+djangorestframework
+django-filter
+django-redis
+django-autoslug
+celery
+coreapi
+Markdown
+python-memcached

@@ -1,0 +1,72 @@
+version: '3.7'
+x-deconcentrator: &deconcentrator
+  restart: unless-stopped
+  networks:
+    - internal
+  environment:
+    - SECRET_KEY_FILE=/run/secrets/secret-key
+    - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
+  secrets:
+    - secret-key
+    - postgres-passwd
+  depends_on:
+    - redis
+    - memcached
+    - rabbitmq
+    - postgres
+
+x-defaults: &defaults
+  restart: unless-stopped
+  networks:
+    - internal
+
+services:
+  uwsgi:
+    <<: *deconcentrator
+    image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
+    ports:
+    - "5000:5000"
+
+  worker:
+    <<: *deconcentrator
+    image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
+    command: run worker
+
+  redis:
+    <<: *defaults
+    image: redis:alpine
+    command: redis-server --maxmemory 16mb --maxmemory-policy allkeys-lru
+
+  memcached:
+    <<: *defaults
+    image: memcached:alpine
+    command: memcached -m 16
+
+  rabbitmq:
+    <<: *defaults
+    image: rabbitmq:alpine
+
+  postgres:
+    <<: *defaults
+    image: postgres:12-alpine
+    environment:
+      - POSTGRES_DB=deconcentrator
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
+    secrets:
+      - postgres-passwd
+    volumes:
+      - postgres:/var/lib/postgresql
+
+networks:
+  internal:
+
+secrets:
+  secret-key:
+    file: secret.key
+
+  postgres-passwd:
+    file: postgres.passwd
+
+volumes:
+  postgres:
+

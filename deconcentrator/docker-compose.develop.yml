@@ -1,0 +1,5 @@
+version: '3.7'
+services:
+  uwsgi:
+    volumes:
+      - ./deconcentrator/src:/mnt/deconcentrator:rw

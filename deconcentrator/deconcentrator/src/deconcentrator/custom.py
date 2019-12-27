@@ -1,7 +1,8 @@
 import os
 
-CUSTOM_INSTALLED_APPS = [
+APPS = [
     'providers',
+    'objectives',
 ]
 
 with open(os.environ["SECRET_KEY_FILE"], 'r') as fd:

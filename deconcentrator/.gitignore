@@ -7,3 +7,4 @@ prepare
 run
 up
 .idea/
+**/__pycache__

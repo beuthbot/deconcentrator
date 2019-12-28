@@ -41,6 +41,9 @@ class Objective(models.Model):
         """ use the strategy to create jobs for this Objective. """
         pass
 
+    def __str__(self):
+        return _("oid_{pk}").format(pk=self.pk)
+
 
 class Job(models.Model):
     """ a provider should execute this objective, and we call this Job. this is created by the strategy.
@@ -53,6 +56,9 @@ class Job(models.Model):
         """ use the provider to actually get this objective translated. """
         pass
 
+    def __str__(self):
+        return _("jid_{pk}").format(pk=self.pk)
+
 
 class Result(models.Model):
     """ the result of an Objective.
@@ -62,8 +68,4 @@ class Result(models.Model):
     payload = JSONField()
 
     def __str__(self):
-        return "%(objective)s %(provider)s %(payload)s" % {
-            'objective': str(self.job.objective),
-            'provider': str(self.job.provider),
-            'payload': str(self.payload),
-        }
+        return _("rid_{pk}").format(pk=self.pk)

@@ -8,6 +8,8 @@ def post_migrate_hook(sender, **kwArgs):
         method="evaluate",
     )
 
+    idents = []
+
     for k, v in os.environ.items():
         if not k.upper().startswith('PROVIDER_'):
             continue
@@ -24,5 +26,11 @@ def post_migrate_hook(sender, **kwArgs):
         (provider, _) = Provider.objects.update_or_create(
             name=name,
             method=method,
-            kwArgs=dict(endpoint=v)
+            args=[],
+            kwargs=dict(endpoint=v)
         )
+
+        idents.append(provider.ident)
+
+    # clean up those, that aren't available anymore
+    Provider.objects.exclude(method=method, ident__in=idents).delete()

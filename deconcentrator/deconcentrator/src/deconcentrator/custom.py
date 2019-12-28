@@ -1,6 +1,7 @@
 import os
 
 APPS = [
+    'rest_framework',
     'providers',
     'objectives',
 ]
@@ -8,7 +9,7 @@ APPS = [
 with open(os.environ["SECRET_KEY_FILE"], 'r') as fd:
     SECRET_KEY = fd.read(1024).rstrip()
 
-DEBUG = os.environ.get('DEBUG', False)
+DEBUG = os.environ.get('DEBUG', str(False)) == str(True)
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', "").split(" ")
 
 with open(os.environ['POSTGRES_PASSWORD_FILE'], 'r') as fd:
@@ -39,3 +40,4 @@ CACHES = {
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'redis'
+STATIC_ROOT = '/mnt/static'

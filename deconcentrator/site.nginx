@@ -1,0 +1,25 @@
+server {
+    listen 80;
+    server_name _ default_server;
+    access_log /dev/stdout combined;
+    error_log /dev/stderr;
+
+    location / {
+        try_files /phohkeCh4eY3cach3erae4ohr7oth9aengocahWaiMaiceseivoum4weshaethoh $uri @wsgi;
+        index phohkeCh4eY3cach3erae4ohr7oth9aengocahWaiMaiceseivoum4weshaethoh.html;
+    }
+
+    location @wsgi {
+        uwsgi_pass uwsgi:9090;
+        include uwsgi_params;
+    }
+
+    location /static {
+        alias /mnt/static;
+        access_log off;
+        expires max;
+        add_header Pragma public;
+        add_header Cache-Control "public";
+        etag on;
+    }
+}

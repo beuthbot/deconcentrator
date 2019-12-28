@@ -4,7 +4,7 @@ import os
 def post_migrate_hook(sender, **kwArgs):
     from .models import Method, Provider
     (method, _) = Method.objects.update_or_create(
-        package="providers.generic",
+        package="providers.methods",
         method="evaluate",
     )
 

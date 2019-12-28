@@ -3,3 +3,30 @@ services:
   uwsgi:
     volumes:
       - ./deconcentrator/src:/mnt/deconcentrator:rw
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost
+
+  traefik:
+    image: traefik:v2.1
+    command: --api.insecure=true --providers.docker
+    ports:
+      - 80:80
+      - 8181:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:1.17-alpine
+    networks:
+      - internal
+    volumes:
+      - ./site.nginx:/etc/nginx/conf.d/default.conf:ro
+      - static:/mnt/static
+    labels:
+      - traefik.http.routers.deconcentrator.rule=Host(`localhost`)
+      - traefik.docker.network=deconcentrator_internal
+    depends_on:
+      - uwsgi

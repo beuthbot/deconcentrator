@@ -1,13 +1,18 @@
-#! /bin/sh
+#! /bin/bash
 
 FILES="secret.key postgres.passwd"
 ACTION="$(basename ${0})"
 
-case ${ACTION} in
-	build)
-		docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml build; 
-		;;
+if [ "management.sh" == "${ACTION}" ]; then
+	ACTION="${1}"
+	shift
+fi
 
+function dc() {
+	exec docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml ${@}
+}
+
+case ${ACTION} in
 	prepare)
 		for file in ${FILES}; do
 			[ -f "${file}" ] && continue
@@ -15,28 +20,14 @@ case ${ACTION} in
 		done
 		;;
 
-	run)
-		./build
-		./prepare
-		docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml run ${@}
-		;;
-
-	up)
-		./prepare
-		docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml up ${@}
-		;;
-
-	down)
-		docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml down -v
-		;;
-
 	cleanup)
-		./down
-		rm -vf ${FILES}
+		set -e
+		./down -v
+		exec rm -vf ${FILES}
 		;;
 
 	*)
-		echo "Don't treat me like that! '${ACTION}' unknown" >&2
-		exit 1
-		;;
+		set -ex
+		dc ${ACTION} ${@}
+
 esac

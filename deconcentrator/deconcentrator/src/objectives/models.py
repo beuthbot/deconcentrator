@@ -21,7 +21,7 @@ class Strategy(models.Model):
     )
 
     def __str__(self):
-        return self.ident
+        return '.'.join([self.package, self.method])
 
 
 class Objective(models.Model):
@@ -34,8 +34,8 @@ class Objective(models.Model):
     creation = models.DateTimeField(auto_now_add=True)
     payload = JSONField()
     strategy = models.ForeignKey('Strategy', on_delete=models.SET_NULL, null=True)
-    args = JSONField(help_text="a list of arguments to pass to the strategy.")
-    kwargs = JSONField(help_text="a dict of keyword arguments to pass to the strategy.")
+    args = JSONField(help_text="a list of arguments to pass to the strategy.", blank=True)
+    kwargs = JSONField(help_text="a dict of keyword arguments to pass to the strategy.", blank=True)
 
     def execute(self):
         """ use the strategy to create jobs for this Objective. """
@@ -60,3 +60,10 @@ class Result(models.Model):
     creation = models.DateTimeField(auto_now_add=True)
     job = models.ForeignKey('Job', on_delete=models.CASCADE)
     payload = JSONField()
+
+    def __str__(self):
+        return "%(objective)s %(provider)s %(payload)s" % {
+            'objective': str(self.job.objective),
+            'provider': str(self.job.provider),
+            'payload': str(self.payload),
+        }

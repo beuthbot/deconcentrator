@@ -19,7 +19,6 @@ class Method(models.Model):
         primary_key=True,
         unique=True,
         populate_from=_method_populate,
-        sep='.'
     )
 
     class Meta:

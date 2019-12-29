@@ -17,7 +17,6 @@ class Strategy(models.Model):
         primary_key=True,
         unique=True,
         populate_from=_strategy_populate,
-        sep='.'
     )
 
     def __str__(self):

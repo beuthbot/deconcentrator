@@ -12,7 +12,7 @@ function dc() {
 	exec docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml ${@}
 }
 
-case ${ACTION} in
+case "${ACTION}" in
 	prepare)
 		for file in ${FILES}; do
 			[ -f "${file}" ] && continue

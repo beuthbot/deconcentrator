@@ -7,3 +7,4 @@ celery
 coreapi
 Markdown
 python-memcached
+pyyaml

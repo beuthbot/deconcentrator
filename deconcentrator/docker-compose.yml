@@ -30,7 +30,7 @@ services:
   worker:
     <<: *deconcentrator
     image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
-    command: /bin/sleep 3600
+    command: celery -A deconcentrator worker
 
   redis:
     <<: *defaults

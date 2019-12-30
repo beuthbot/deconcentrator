@@ -42,6 +42,8 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'redis'
 STATIC_ROOT = '/mnt/static'
 
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+
 
 # noinspection PyPep8
 from django.utils.log import DEFAULT_LOGGING

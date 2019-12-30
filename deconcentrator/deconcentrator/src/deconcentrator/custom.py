@@ -41,3 +41,16 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'redis'
 STATIC_ROOT = '/mnt/static'
+
+
+# noinspection PyPep8
+from django.utils.log import DEFAULT_LOGGING
+from deepmerge import always_merger
+LOGGING = always_merger.merge(DEFAULT_LOGGING, {
+    'loggers': {
+        'deconcentrator': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        }
+    }
+})

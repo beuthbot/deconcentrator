@@ -19,17 +19,16 @@ for app in settings.INSTALLED_APPS:
         module = import_module(name)
 
         if not hasattr(module, 'urlpatterns'):
+            logger.debug("Can't include %r, doesn't define any `urlpatterns`", name)
             continue
 
     except ImportError as exc:
         if exc.name == name:
+            # module does not exist at all.
             continue
 
-        logger.debug("Failed to import %r", name, exc_info=True)
-        continue
+        raise
 
     else:
         logger.info("API including %r", name)
-        urlpatterns += [
-            url(r'^' + app + '/', include(name), name=app),
-        ]
+        urlpatterns.append(url(r'^' + app + '/', include(name), name=app))

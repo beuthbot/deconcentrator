@@ -7,6 +7,7 @@ from importlib import import_module
 
 # noinspection PyProtectedMember
 from providers.models import _method_populate as _strategy_populate
+from .proxies import ObjectiveProxy as Proxy
 
 
 class Strategy(models.Model):
@@ -22,11 +23,23 @@ class Strategy(models.Model):
 
     def execute(self, objective, job=None, result=None):
         """ call the defined method, to get (more) Jobs created. """
-        module = import_module(self.package)
-        method = getattr(module, self.method)
-        # NOTE: `method` might be called multiple times.
-        # NOTE: `method` has to make sure, not to create unlimited amounts of `Job` instances for this `Objective`
-        method(objective, job, result)
+        try:
+            assert "type" in objective.payload
+            assert objective.payload["type"] in ("text", "audio")
+            assert "data" in objective.payload
+            module = import_module(self.package)
+            method = getattr(module, self.method)
+            # NOTE: `method` might be called multiple times.
+            # NOTE: `method` has to make sure, not to create unlimited amounts of `Job` instances for this `Objective`
+            method(Proxy(objective), job, result)
+
+        except Exception:
+            # ow snag. be sure to mark this one as failed.
+            # but be sure to work on the most up2date data.
+            objective.reload()
+            objective.state = Objective.STATE_FAILED
+            objective.save()
+            raise
 
     def __str__(self):
         return '.'.join([self.package, self.method])
@@ -34,10 +47,11 @@ class Strategy(models.Model):
 
 class Objective(models.Model):
     """ some kind of message to be processed by NLU. the payload should contain a `type` field (`text` or `audio`)
-    and a `data` field for the actual message, either base64 encoded audio data or the simple text data.
+    and a `data` field for the actual message. in both cases, `data` should contain the base64 representation of the
+    data.
 
     example objective object:
-    ```{ "payload" : { "type": "text", "data": "hello world" }, "strategy": "xxx", "args": [], "kwargs": {} }```
+    ```{ "payload" : { "type": "text", "data": "[base64 representation of 'hello world']" }, "strategy": "xxx", "args": [], "kwargs": {} }```
     """
     creation = models.DateTimeField(auto_now_add=True)
     payload = JSONField()
@@ -45,8 +59,27 @@ class Objective(models.Model):
     args = JSONField(help_text="a list of arguments to pass to the strategy.", blank=True)
     kwargs = JSONField(help_text="a dict of keyword arguments to pass to the strategy.", blank=True)
 
+    STATE_CREATED = 'c'
+    STATE_QUEUED = 'q'
+    STATE_PROCESSING = 'p'
+    STATE_FAILED = 'F'
+    STATE_FINISHED = 'f'
+
+    STATE_CHOICES = [
+        (STATE_CREATED, _("created")),
+        (STATE_QUEUED, _("queued")),
+        (STATE_PROCESSING, _("processing")),
+        (STATE_FAILED, _("failed")),
+        (STATE_FINISHED, _("finished")),
+    ]
+    STATES_PROCESSING = [STATE_CREATED, STATE_QUEUED, STATE_PROCESSING]
+    state = models.CharField(max_length=1, choices=STATE_CHOICES, default=STATE_CREATED)
+
     def execute(self):
         """ use the strategy to create jobs for this Objective. """
+        if self.state not in Objective.STATES_PROCESSING:
+            return
+
         self.strategy.execute(self)
 
     def __str__(self):
@@ -59,6 +92,7 @@ class Job(models.Model):
     creation = models.DateTimeField(auto_now_add=True)
     objective = models.ForeignKey('Objective', on_delete=models.CASCADE, related_name='jobs')
     provider = models.ForeignKey('providers.Provider', on_delete=models.SET_NULL, null=True)
+    state = models.CharField(max_length=1, choices=Objective.STATE_CHOICES, default=Objective.STATE_CREATED)
 
     def execute(self):
         """ use the provider to actually get this objective translated. """

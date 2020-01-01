@@ -20,13 +20,13 @@ class Strategy(models.Model):
         populate_from=_strategy_populate,
     )
 
-    def execute(self, objective, job=None):
+    def execute(self, objective, job=None, result=None):
         """ call the defined method, to get (more) Jobs created. """
         module = import_module(self.package)
         method = getattr(module, self.method)
         # NOTE: `method` might be called multiple times.
         # NOTE: `method` has to make sure, not to create unlimited amounts of `Job` instances for this `Objective`
-        method(objective, job)
+        method(objective, job, result)
 
     def __str__(self):
         return '.'.join([self.package, self.method])

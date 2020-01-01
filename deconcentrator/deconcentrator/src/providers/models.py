@@ -1,3 +1,5 @@
+from importlib import import_module
+
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.utils.translation import gettext_lazy as _
@@ -32,9 +34,19 @@ class Method(models.Model):
         :param kwArgs:
         :return:
         """
-        module = import_module(self.package)
-        method = getattr(module, self.method)
-        method(job, *args, **kwArgs)
+
+        try:
+
+            module = import_module(self.package)
+            method = getattr(module, self.method)
+            method(job, *args, **kwArgs)
+
+        except Exception:
+            # ow snag. be sure to mark this one as failed.
+            # but be sure to work on the most up2date data.
+            from objectives.models import Job
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FAILED)
+            raise
 
     def __str__(self):
         return '.'.join([self.package, self.method])
@@ -56,7 +68,7 @@ class Provider(models.Model):
         :param job: the job.
         :return:
         """
-        self.method.execute(job, **self.args, **self.kwargs)
+        self.method.execute(job, *self.args, **self.kwargs)
 
     def __str__(self):
         return self.name

@@ -1,7 +1,9 @@
 from django.db import transaction
 
 from providers.models import Provider
-from .models import Objective, Result
+from .models import Objective, Job, Result
+
+logger = logging.getLogger("deconcentrator.objectives.strategies")
 
 
 def all(objective, job=None, result=None):
@@ -15,50 +17,54 @@ def all(objective, job=None, result=None):
 
     if objective.state == Objective.STATE_CREATED:
         # step one: create jobs.
+        logger.debug("all(%r, %r, %r): step one", objective, job, result)
+
         assert job is None
         assert result is None
 
         with transaction.atomic():
-            jobs = Job.objects.filter(objective=objective).values('ident')
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_QUEUED)
+            objective.refresh_from_db()
 
-            for provider in Provider.objects.exclude(ident__in=jobs):
-                job = Job(objective=objective, provider=provider)
+            providers = Job.objects.filter(objective_id=objective.pk).values('provider__ident')
+
+            for provider in Provider.objects.exclude(ident__in=providers):
+                job = Job(objective_id=objective.pk, provider=provider)
                 job.save()
 
-            objective.state = Objective.STATE_QUEUED
-            objective.save()
             return
 
     if objective.state == Objective.STATE_QUEUED:
         # step two: start calling the provider.
+        logger.debug("all(%r, %r, %r): step two", objective, job, result)
+
         assert job is not None
         assert result is None
 
         with transaction.atomic():
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_QUEUED)
+            job.refresh_from_db()
             job.provider.execute(job)
-            job.state = Objective.STATE_QUEUED
-            job.save()
 
             if objective.jobs.filter(state=Objective.STATE_CREATED).count() < 1:
-                objective.state = Objective.STATE_PROCESSING
-                objective.save()
+                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_PROCESSING)
 
             return
 
-    # step three: results coming in.
-    assert job is not None
-    assert result is not None
-
     if objective.state == Objective.STATE_PROCESSING:
+        # step three: results coming in.
+        logger.debug("all(%r, %r, %r): step three", objective, job, result)
+
+        assert job is not None
+        assert result is not None
+
         with transaction.atomic():
             # we got a result, that's something, isn't it?
-            job.state = Objective.STATE_FINISHED
-            job.save()
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FINISHED)
 
             if objective.jobs.exclude(state__not=Objective.STATE_FINISHED).count() < 1:
                 # shortcut: all jobs finished
-                objective.state = Objective.STATE_FINISHED
-                objective.save()
+                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FINISHED)
 
             return
 

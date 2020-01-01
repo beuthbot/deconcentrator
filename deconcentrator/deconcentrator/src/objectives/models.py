@@ -48,9 +48,7 @@ class Strategy(models.Model):
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
-            objective.refresh_from_db()
-            objective.state = Objective.STATE_FAILED
-            objective.save()
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
             raise
 
     def __str__(self):

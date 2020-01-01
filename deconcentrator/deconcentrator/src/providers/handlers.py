@@ -1,7 +1,7 @@
 import os
 
 
-def post_migrate_hook(sender, **kwArgs):
+def post_migrate_hook(*args, **kwArgs):
     from .models import Method, Provider
     (method, _) = Method.objects.update_or_create(
         package="providers.methods",

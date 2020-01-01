@@ -1,4 +1,6 @@
 import os
+from django.utils.log import DEFAULT_LOGGING
+from deepmerge import always_merger
 
 APPS = [
     'rest_framework',
@@ -44,15 +46,17 @@ STATIC_ROOT = '/mnt/static'
 
 CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
 
-
-# noinspection PyPep8
-from django.utils.log import DEFAULT_LOGGING
-from deepmerge import always_merger
 LOGGING = always_merger.merge(DEFAULT_LOGGING, {
+    'handlers': {
+        'console': {
+            # allows displaying of debug messages on the console as well.
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        }
+    },
     'loggers': {
         'deconcentrator': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': 'DEBUG' if DEBUG else 'INFO',
         }
     }
 })

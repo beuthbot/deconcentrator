@@ -24,6 +24,18 @@ class Method(models.Model):
     class Meta:
         unique_together = [('package', 'method',)]
 
+    def execute(self, job, *args, **kwArgs):
+        """ actually call the method to fulfill the job.
+
+        :param job: the job.
+        :param args:
+        :param kwArgs:
+        :return:
+        """
+        module = import_module(self.package)
+        method = getattr(module, self.method)
+        method(job, *args, **kwArgs)
+
     def __str__(self):
         return '.'.join([self.package, self.method])
 
@@ -37,6 +49,14 @@ class Provider(models.Model):
     method = models.ForeignKey('Method', on_delete=models.CASCADE, help_text=_("the function to use for this provider."))
     args = JSONField(help_text=_("a list of arguments to pass to the method."), blank=True)
     kwargs = JSONField(help_text=_("a dict of keyword arguments to pass to the method."), blank=True)
+
+    def execute(self, job):
+        """ pass the job on to the actual method.
+
+        :param job: the job.
+        :return:
+        """
+        self.method.execute(job, **self.args, **self.kwargs)
 
     def __str__(self):
         return self.name

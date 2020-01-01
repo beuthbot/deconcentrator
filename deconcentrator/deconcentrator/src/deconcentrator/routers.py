@@ -6,8 +6,7 @@ from django.conf.urls import url, include
 
 from rest_framework import schemas
 
-logger = logging.getLogger('deconcentrator.routers')
-
+logger = logging.getLogger("deconcentrator.deconcentrator.router")
 urlpatterns = [
     url(r'^$', schemas.get_schema_view(title="deconcentrator api"), name='api-root'),
 ]

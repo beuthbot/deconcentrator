@@ -8,6 +8,10 @@ services:
       - ALLOWED_HOSTS=localhost
       - PROVIDER_RASA_ENDPOINT=http://rasa.beuthbot.dev
 
+  worker:
+    environment:
+      - DEBUG=True
+
   traefik:
     image: traefik:v2.1
     command: --api.insecure=true --providers.docker

@@ -1,8 +1,13 @@
 import os
+import logging
+
+logger = logging.getLogger("deconcentrator.providers.handlers")
 
 
 def post_migrate_hook(*args, **kwArgs):
     from .models import Method, Provider
+
+    logger.debug("post_migrate_hook: ensuring `evaluate` method.")
     (method, _) = Method.objects.update_or_create(
         package="providers.methods",
         method="evaluate",
@@ -10,6 +15,7 @@ def post_migrate_hook(*args, **kwArgs):
 
     idents = []
 
+    logger.debug("post_migrate_hook: seeking providers.")
     for k, v in os.environ.items():
         if not k.upper().startswith('PROVIDER_'):
             continue
@@ -23,6 +29,7 @@ def post_migrate_hook(*args, **kwArgs):
         except ValueError:
             continue
 
+        logger.debug("post_migrate_hook: ensuring provider %s", name)
         (provider, _) = Provider.objects.update_or_create(
             name=name,
             method=method,

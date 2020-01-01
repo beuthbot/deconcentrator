@@ -1,13 +1,17 @@
+import logging
+from importlib import import_module
+
 from django.db import models, transaction
 from django.contrib.postgres.fields import JSONField
 from django.utils.translation import gettext_lazy as _
 
 from autoslug import AutoSlugField
-from importlib import import_module
 
 # noinspection PyProtectedMember
 from providers.models import _method_populate as _strategy_populate
 from .proxies import ObjectiveProxy as Proxy
+
+logger = logging.getLogger("deconcentrator.objectives.models")
 
 
 class Strategy(models.Model):
@@ -23,6 +27,14 @@ class Strategy(models.Model):
 
     def execute(self, objective, job=None, result=None):
         """ call the defined method, to get (more) Jobs created. """
+        logger.debug(
+            "Strategy %s `.execute()`. Dispatching to method (objective: %r, job: %r, result: %r).",
+            self.ident,
+            objective,
+            job,
+            result
+        )
+
         try:
             assert "type" in objective.payload
             assert objective.payload["type"] in ("text", "audio")
@@ -36,7 +48,7 @@ class Strategy(models.Model):
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
-            objective.reload()
+            objective.refresh_from_db()
             objective.state = Objective.STATE_FAILED
             objective.save()
             raise
@@ -73,13 +85,15 @@ class Objective(models.Model):
         (STATE_FINISHED, _("finished")),
     ]
     STATES_PROCESSING = [STATE_CREATED, STATE_QUEUED, STATE_PROCESSING]
-    state = models.CharField(max_length=1, choices=STATE_CHOICES, default=STATE_CREATED)
+    state = models.CharField(max_length=1, choices=STATE_CHOICES, default=STATE_CREATED, editable=False)
 
     def execute(self):
         """ use the strategy to create jobs for this Objective. """
         if self.state not in Objective.STATES_PROCESSING:
+            logger.debug("`Objective.execute()` called with state=%r, returning", self.state)
             return
 
+        logger.debug("`Objective.execute()` called with state=%r, dispatching to strategy", self.state)
         self.strategy.execute(self)
 
     def __str__(self):
@@ -92,10 +106,16 @@ class Job(models.Model):
     creation = models.DateTimeField(auto_now_add=True)
     objective = models.ForeignKey('Objective', on_delete=models.CASCADE, related_name='jobs')
     provider = models.ForeignKey('providers.Provider', on_delete=models.SET_NULL, null=True)
-    state = models.CharField(max_length=1, choices=Objective.STATE_CHOICES, default=Objective.STATE_CREATED)
+    state = models.CharField(
+        max_length=1,
+        choices=Objective.STATE_CHOICES,
+        default=Objective.STATE_CREATED,
+        editable=False
+    )
 
     def execute(self):
         """ use the provider to actually get this objective translated. """
+        logger.debug("`Job.execute()` called, dispatching to strategy")
         self.objective.strategy.execute(self.objective, self)
 
     def __str__(self):
@@ -106,11 +126,12 @@ class Result(models.Model):
     """ the result of an Objective.
     """
     creation = models.DateTimeField(auto_now_add=True)
-    job = models.ForeignKey('Job', on_delete=models.CASCADE)
+    job = models.ForeignKey('Job', on_delete=models.CASCADE, related_name='results')
     payload = JSONField()
 
     def execute(selfself):
         """ allow the strategy to actually decide to spawn a new job. """
+        logger.debug("`Result.execute()` called, dispatching to strategy")
         self.job.objective.strategy.execute(self.job.objective, self.job, self)
 
     def __str__(self):

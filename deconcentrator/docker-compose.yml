@@ -1,8 +1,13 @@
 version: '3.7'
-x-deconcentrator: &deconcentrator
+
+x-defaults: &defaults
   restart: unless-stopped
   networks:
     - internal
+
+x-deconcentrator: &deconcentrator
+  <<: *defaults
+  image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
   environment:
     - SECRET_KEY_FILE=/run/secrets/secret-key
     - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
@@ -15,21 +20,14 @@ x-deconcentrator: &deconcentrator
     - rabbitmq
     - postgres
 
-x-defaults: &defaults
-  restart: unless-stopped
-  networks:
-    - internal
-
 services:
   uwsgi:
     <<: *deconcentrator
-    image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
     volumes:
       - static:/mnt/static
 
   worker:
     <<: *deconcentrator
-    image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
     command: celery -A deconcentrator worker
 
   redis:

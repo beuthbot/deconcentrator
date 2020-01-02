@@ -4,7 +4,6 @@ from deepmerge import always_merger
 
 APPS = [
     'rest_framework',
-    'providers',
     'objectives',
 ]
 

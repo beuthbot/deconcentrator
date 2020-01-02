@@ -1,4 +1,4 @@
-from providers.tasks import evaluate_task
+from objectives.tasks import evaluate_task
 
 
 def evaluate(job):

@@ -7,23 +7,98 @@ from django.utils.translation import gettext_lazy as _
 
 from autoslug import AutoSlugField
 
-# noinspection PyProtectedMember
-from providers.models import _method_populate as _strategy_populate
 from .proxies import ObjectiveProxy as Proxy
 
 logger = logging.getLogger("deconcentrator.objectives.models")
 
 
-class Strategy(models.Model):
-    """ a strategy selects the providers to use for a given Objective.
+def _pmm_populate(m):
+    return "%s.%s" % (m.package, m.method,)
+
+
+class PackagedMethodModel(models.Model):
+
+    """ abstract base class that allows specifying a package and a method name, that can be loaded/called.
     """
+
+    class Meta:
+        abstract = True
+        unique_together = [('package', 'method',)]
+
     package = models.CharField(max_length=200)
     method = models.CharField(max_length=20)
     ident = AutoSlugField(
         primary_key=True,
         unique=True,
-        populate_from=_strategy_populate,
+        populate_from=_pmm_populate,
     )
+
+    @property
+    def function(self):
+        module = import_module(self.package)
+        return getattr(module, self.method)
+
+    def __str__(self):
+        return '.'.join([self.package, self.method])
+
+
+class Method(PackagedMethodModel):
+    """ a method to let some provider do the hard NLU stuff. this is usually
+    done via a specific http interface.
+    """
+
+    def execute(self, job):
+        """ actually call the method to fulfill the job.
+
+        :param job: the job.
+        :return:
+        """
+
+        try:
+            self.function(job)
+
+        except Exception:
+            # ow snag. be sure to mark this one as failed.
+            # but be sure to work on the most up2date data.
+            from objectives.models import Objective, Job
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FAILED)
+            raise
+
+
+class Modality(PackagedMethodModel):
+    """ the modality of a provider. do we have to pay the provider? is there a free tier included?
+    """
+
+    def available(self):
+        return self.function()
+
+
+class Provider(models.Model):
+    """ a single NLU provider. in other words: an instance of this class represents
+    a way of interpreting natural language.
+    """
+    name = models.CharField(max_length=30)
+    ident = AutoSlugField(primary_key=True, populate_from='name')
+    method = models.ForeignKey('Method', on_delete=models.CASCADE, help_text=_("the function to use for this provider."))
+    modality = models.ForeignKey('Modality', on_delete=models.SET_NULL, null=True, help_text=_("Cost-plans/free-tiers etc."))
+    args = JSONField(help_text=_("a list of arguments to pass to the method."), blank=True)
+    kwargs = JSONField(help_text=_("a dict of keyword arguments to pass to the method."), blank=True)
+
+    def execute(self, job):
+        """ pass the job on to the actual method.
+
+        :param job: the job.
+        :return:
+        """
+        self.method.execute(job)
+
+    def __str__(self):
+        return self.name
+
+
+class Strategy(PackagedMethodModel):
+    """ a strategy selects the providers to use for a given Objective.
+    """
 
     def execute(self, objective, job=None, result=None):
         """ call the defined method, to get (more) Jobs created. """
@@ -39,20 +114,13 @@ class Strategy(models.Model):
             assert "type" in objective.payload
             assert objective.payload["type"] in ("text", "audio")
             assert "data" in objective.payload
-            module = import_module(self.package)
-            method = getattr(module, self.method)
-            # NOTE: `method` might be called multiple times.
-            # NOTE: `method` has to make sure, not to create unlimited amounts of `Job` instances for this `Objective`
-            method(Proxy(objective), job, result)
+            self.function(Proxy(objective), job, result)
 
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
             Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
             raise
-
-    def __str__(self):
-        return '.'.join([self.package, self.method])
 
 
 class Objective(models.Model):
@@ -103,7 +171,7 @@ class Job(models.Model):
     """
     creation = models.DateTimeField(auto_now_add=True)
     objective = models.ForeignKey('Objective', on_delete=models.CASCADE, related_name='jobs')
-    provider = models.ForeignKey('providers.Provider', on_delete=models.SET_NULL, null=True)
+    provider = models.ForeignKey('Provider', on_delete=models.SET_NULL, null=True)
     state = models.CharField(
         max_length=1,
         choices=Objective.STATE_CHOICES,

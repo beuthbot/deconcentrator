@@ -5,9 +5,7 @@
 import logging
 
 from django.db import transaction
-
-from providers.models import Provider
-from .models import Objective, Job, Result
+from .models import Provider, Objective, Job, Result
 
 logger = logging.getLogger("deconcentrator.objectives.strategies")
 

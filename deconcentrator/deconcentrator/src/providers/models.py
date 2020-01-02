@@ -26,12 +26,10 @@ class Method(models.Model):
     class Meta:
         unique_together = [('package', 'method',)]
 
-    def execute(self, job, *args, **kwArgs):
+    def execute(self, job):
         """ actually call the method to fulfill the job.
 
         :param job: the job.
-        :param args:
-        :param kwArgs:
         :return:
         """
 
@@ -39,12 +37,12 @@ class Method(models.Model):
 
             module = import_module(self.package)
             method = getattr(module, self.method)
-            method(job, *args, **kwArgs)
+            method(job)
 
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
-            from objectives.models import Job
+            from objectives.models import Objective, Job
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FAILED)
             raise
 
@@ -68,7 +66,7 @@ class Provider(models.Model):
         :param job: the job.
         :return:
         """
-        self.method.execute(job, *self.args, **self.kwargs)
+        self.method.execute(job)
 
     def __str__(self):
         return self.name

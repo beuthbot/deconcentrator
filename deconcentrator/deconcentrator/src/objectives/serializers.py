@@ -9,22 +9,28 @@ class StrategySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ObjectiveSerializer(serializers.ModelSerializer):
+class ResultSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Objective
+        model = Result
         fields = '__all__'
 
 
 class JobSerializer(serializers.ModelSerializer):
+
+    results = ResultSerializer(many=True, read_only=True)
 
     class Meta:
         model = Job
         fields = '__all__'
 
 
-class ResultSerializer(serializers.ModelSerializer):
+class ObjectiveSerializer(serializers.ModelSerializer):
+
+    jobs = JobSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Result
+        model = Objective
         fields = '__all__'
+
+

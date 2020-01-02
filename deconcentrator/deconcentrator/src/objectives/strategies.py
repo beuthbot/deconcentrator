@@ -1,3 +1,9 @@
+""" General note: these methods are called from within a `post_save`-hook. therefore you have to avoid any circular
+`save` calls. You can do so, by using the `Model.objects.filter(...).update(...)`-approach.
+
+"""
+import logging
+
 from django.db import transaction
 
 from providers.models import Provider
@@ -7,7 +13,7 @@ logger = logging.getLogger("deconcentrator.objectives.strategies")
 
 
 def all(objective, job=None, result=None):
-    """ literally use *all* available `Provider`s. shouldn't be used in production.
+    """ literally use *all* available `Provider`s. Shouldn't be used in production.
 
     :param objective: the objective.
     :param job: one of the jobs created.
@@ -52,10 +58,17 @@ def all(objective, job=None, result=None):
             return
 
     if objective.state == Objective.STATE_PROCESSING:
-        # step three: results coming in.
+        # step three: maybe results coming in
         logger.debug("all(%r, %r, %r): step three", objective, job, result)
 
         assert job is not None
+
+        if job.state == Objective.STATE_FAILED:
+            # dang, this job seems like a failed one.
+            assert result is None
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
+            return
+
         assert result is not None
 
         with transaction.atomic():

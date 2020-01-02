@@ -45,6 +45,7 @@ SESSION_CACHE_ALIAS = 'redis'
 STATIC_ROOT = '/mnt/static'
 
 CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
 
 LOGGING = always_merger.merge(DEFAULT_LOGGING, {
     'handlers': {

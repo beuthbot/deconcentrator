@@ -1,6 +1,6 @@
-from .tasks import evaluate_task, evaluate_error
+from providers.tasks import evaluate_task
 
 
-def evaluate(*args, **kwArgs):
+def evaluate(job):
     """ evaluate the given message (voice or text) by transmitting to the NLU provider. """
-    evaluate_task.apply_async(args, kwArgs, link_error=evaluate_error.s())
+    evaluate_task.delay(job.pk)

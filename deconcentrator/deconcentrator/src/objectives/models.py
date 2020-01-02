@@ -127,7 +127,7 @@ class Result(models.Model):
     job = models.ForeignKey('Job', on_delete=models.CASCADE, related_name='results')
     payload = JSONField()
 
-    def execute(selfself):
+    def execute(self):
         """ allow the strategy to actually decide to spawn a new job. """
         logger.debug("`Result.execute()` called, dispatching to strategy")
         self.job.objective.strategy.execute(self.job.objective, self.job, self)

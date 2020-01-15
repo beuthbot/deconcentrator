@@ -48,7 +48,7 @@ def post_migrate_hook(*args, **kwArgs):
         from .models import Strategy
 
         logger.debug("post_migrate_hook")
-        for name in ['all', 'free', 'accounted', 'score']:
+        for name in ['nlu_all', 'nlu_score']:
             (strategy, _) = Strategy.objects.update_or_create(
                 package='objectives.strategies',
                 method=name,

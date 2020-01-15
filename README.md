@@ -7,6 +7,9 @@ let deconcentrator do the "hard" work of checking multiple natural language unde
 be a common endpoint for various nlu providers:
 
 - [RASA](https://rasa.com/docs/rasa/)
+
+others aren't implemented yet, but implementation should be trivial: 
+
 - [Microsoft LUIS](https://azure.microsoft.com/de-de/services/cognitive-services/language-understanding-intelligent-service/)
 - [Google Cloud NLU](https://cloud.google.com/natural-language/)
 - [IBM Watson NLU](https://www.ibm.com/watson/services/natural-language-understanding/)

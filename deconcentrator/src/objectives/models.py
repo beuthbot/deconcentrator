@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from autoslug import AutoSlugField
 
 from .proxies import ObjectiveProxy as Proxy
+from .methods import callback as do_callback
 
 logger = logging.getLogger("deconcentrator.objectives.models")
 
@@ -150,6 +151,10 @@ class Objective(models.Model):
             logger.debug("`Objective.execute()` called with state=%r, returning", self.state)
             return
 
+        if self.strategy is None:
+            logger.debug("`Objective.execute()` called with strategy=%r, returning", self.strategy)
+            return
+
         logger.debug("`Objective.execute()` called with state=%r, dispatching to strategy", self.state)
         self.strategy.execute(self)
 
@@ -174,6 +179,10 @@ class Job(models.Model):
         """ use the provider to actually get this objective translated. """
         logger.debug("`Job.execute()` called, dispatching to strategy")
         self.objective.strategy.execute(self.objective, self)
+
+    def callback(self):
+        """ actually do a callback for providing updated state of the objective. """
+        do_callback(self)
 
     def __str__(self):
         return _("jid_{pk}").format(pk=self.pk)

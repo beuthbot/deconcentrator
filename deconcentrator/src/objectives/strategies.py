@@ -5,12 +5,14 @@
 import logging
 
 from django.db import transaction
-from .models import Provider, Objective, Job, Result
+from .models import Provider, Objective, Job
+
+from .tasks import callback_task
 
 logger = logging.getLogger("deconcentrator.objectives.strategies")
 
 
-def all(objective, job=None, result=None):
+def nlu_all(objective, job=None, result=None):
     """ literally use *all* available `Provider`s. Shouldn't be used in production.
 
     :param objective: the objective.
@@ -72,6 +74,8 @@ def all(objective, job=None, result=None):
         with transaction.atomic():
             # we got a result, that's something, isn't it?
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FINISHED)
+            job.callback()
+
 
             if objective.jobs.exclude(state__not=Objective.STATE_FINISHED).count() < 1:
                 # shortcut: all jobs finished
@@ -80,16 +84,17 @@ def all(objective, job=None, result=None):
             return
 
 
-def free(objective, job=None, result=None):
-    """ use only fully free accounts. """
-    pass
+def nlu_score(objective, job=None, result=None):
+    """ try to reach the score using the given providers. """
 
+    if objective.state == Objective.STATE_CREATED:
+        # step one: create a job for the given objective using the firstly selected provider.
+        pass
 
-def accounted(objective, job=None, result=None):
-    """ prefer a paid account, if there's some of the free tier left. """
-    pass
+    if objective.state == Objective.STATE_QUEUED:
+        # step two: start calling the provider.
+        pass
 
-
-def score(objective, job=None, result=None):
-    """ try to reach the score. """
-    pass
+    if objective.state == Objective.STATE_PROCESSING:
+        # step three: maybe results coming in.
+        pass

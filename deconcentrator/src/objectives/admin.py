@@ -2,7 +2,6 @@ from django.contrib import admin
 from .models import *
 
 admin.site.register(Method)
-admin.site.register(Modality)
 admin.site.register(Provider)
 admin.site.register(Strategy)
 admin.site.register(Objective)

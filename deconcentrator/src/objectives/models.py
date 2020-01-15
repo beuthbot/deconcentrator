@@ -65,14 +65,6 @@ class Method(PackagedMethodModel):
             raise
 
 
-class Modality(PackagedMethodModel):
-    """ the modality of a provider. do we have to pay the provider? is there a free tier included?
-    """
-
-    def available(self):
-        return self.function()
-
-
 class Provider(models.Model):
     """ a single NLU provider. in other words: an instance of this class represents
     a way of interpreting natural language.
@@ -80,7 +72,6 @@ class Provider(models.Model):
     name = models.CharField(max_length=30)
     ident = AutoSlugField(primary_key=True, populate_from='name')
     method = models.ForeignKey('Method', on_delete=models.CASCADE, help_text=_("the function to use for this provider."))
-    modality = models.ForeignKey('Modality', on_delete=models.SET_NULL, null=True, help_text=_("Cost-plans/free-tiers etc."))
     args = JSONField(help_text=_("a list of arguments to pass to the method."), blank=True)
     kwargs = JSONField(help_text=_("a dict of keyword arguments to pass to the method."), blank=True)
 

@@ -30,7 +30,6 @@ be a common endpoint for various nlu providers:
 ### important models
 
 - `Method`: the abstraction of a function to retrieve an actual NLU processing result.
-- `Modality`: abstract away the hassle of free tiers, paid providers etc.
 - `Provider`: the actual provider, which is doing some kind of NLU processing. 
 - `Strategy`: how to select a `Provider` for a specific `Objective`
 - `Objective`: kind of a task that has to be done. It's the main entry-point, user-supplied. It contains the actual 

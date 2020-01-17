@@ -7,8 +7,6 @@ import logging
 from django.db import transaction
 from .models import Provider, Objective, Job
 
-from .tasks import callback_task
-
 logger = logging.getLogger("deconcentrator.objectives.strategies")
 
 
@@ -74,12 +72,12 @@ def nlu_all(objective, job=None, result=None):
         with transaction.atomic():
             # we got a result, that's something, isn't it?
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FINISHED)
-            job.callback()
-
 
             if objective.jobs.exclude(state__not=Objective.STATE_FINISHED).count() < 1:
                 # shortcut: all jobs finished
                 Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FINISHED)
+
+            job.callback()
 
             return
 
@@ -87,14 +85,65 @@ def nlu_all(objective, job=None, result=None):
 def nlu_score(objective, job=None, result=None):
     """ try to reach the score using the given providers. """
 
+    def get_provider():
+        """ retrieve another provider for this """
+
+        # todo: order of selected providers
+        providers = Provider.objects.filter(ident__in=objective.args) if len(objective.args) else Provider.objects.all()
+        providers = providers.exclude(ident__in=objective.jobs.values("provider__pk"))
+        return providers.first()
+
+    def schedule_or_fail():
+        """ try to schedule another job for this objective or bury it deep. """
+
+        with transaction.atomic():
+            provider = get_provider()
+            if provider is None:
+                # fast-lane exit...
+                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
+                return
+
+            j = Job.objects.create(objective_id=objective.pk, provider=provider)
+            j.save()
+
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_QUEUED)
+
     if objective.state == Objective.STATE_CREATED:
-        # step one: create a job for the given objective using the firstly selected provider.
-        pass
+        # step one: create first job for the given objective using the first provider.
+
+        schedule_or_fail()
+        return
 
     if objective.state == Objective.STATE_QUEUED:
         # step two: start calling the provider.
-        pass
+
+        with transaction.atomic():
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_QUEUED)
+            job.refresh_from_db()
+            job.provider.execute(job)
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_PROCESSING)
+            return
 
     if objective.state == Objective.STATE_PROCESSING:
         # step three: maybe results coming in.
-        pass
+
+        if job.state == Objective.STATE_FAILED:
+            # dang, this job seems like a failed one.
+            # let's see, if we have another option left.
+            assert result is None
+            schedule_or_fail()
+            return
+
+        assert result is not None
+        with transaction.atomic():
+            # we got a result, that's something, isn't it?
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FINISHED)
+            score = objective.kwargs.pop('confidence_score')
+            if result.payload["intent"]["confidence"] > score:
+                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FINISHED)
+
+            else:
+                schedule_or_fail()
+
+            job.callback()
+            return

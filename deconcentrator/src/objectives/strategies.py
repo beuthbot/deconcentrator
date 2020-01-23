@@ -88,7 +88,8 @@ def nlu_score(objective, job=None, result=None):
     def get_provider():
         """ retrieve another provider for this """
 
-        # todo: order of selected providers
+        # todo: order of selected providers, `objective.args` possibly contains a ordered list of `providers`.
+        # todo: the ordering is currently not taken into account.
         providers = Provider.objects.filter(ident__in=objective.args) if len(objective.args) else Provider.objects.all()
         providers = providers.exclude(ident__in=objective.jobs.values("provider__pk"))
         return providers.first()

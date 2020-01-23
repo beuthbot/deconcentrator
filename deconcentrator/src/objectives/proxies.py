@@ -17,6 +17,6 @@ class ObjectiveProxy(object):
             if attr == "type":
                 return payload_type
 
-            return base64.standard_b64decode(self._objective.payload["data"])
+            return base64.standard_b64decode(self._objective.payload["data"]).decode('utf-8')
 
         return getattr(self._objective, attr)

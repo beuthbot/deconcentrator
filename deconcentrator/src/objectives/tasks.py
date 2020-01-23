@@ -34,7 +34,7 @@ def evaluate_task(jid):
         Result(job=job, payload=response).save()
 
     except Exception:
-        job.state = Objective.STATE_FAILED
+        Job.objects.filter(pk=job.pk).update(state=Objective.STATE_ERROR)
         job.save()
         raise
 

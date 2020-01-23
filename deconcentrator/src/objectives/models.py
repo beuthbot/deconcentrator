@@ -62,7 +62,7 @@ class Method(PackagedMethodModel):
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
             from objectives.models import Objective, Job
-            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FAILED)
+            Job.objects.filter(pk=job.pk).update(state=Objective.STATE_ERROR)
             raise
 
 
@@ -111,7 +111,7 @@ class Strategy(PackagedMethodModel):
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
-            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_ERROR)
             raise
 
 
@@ -132,14 +132,14 @@ class Objective(models.Model):
     STATE_CREATED = 'c'
     STATE_QUEUED = 'q'
     STATE_PROCESSING = 'p'
-    STATE_FAILED = 'F'
+    STATE_ERROR = 'e'
     STATE_FINISHED = 'f'
 
     STATE_CHOICES = [
         (STATE_CREATED, _("created")),
         (STATE_QUEUED, _("queued")),
         (STATE_PROCESSING, _("processing")),
-        (STATE_FAILED, _("failed")),
+        (STATE_ERROR, _("error")),
         (STATE_FINISHED, _("finished")),
     ]
     STATES_PROCESSING = [STATE_CREATED, STATE_QUEUED, STATE_PROCESSING]

@@ -61,10 +61,10 @@ def nlu_all(objective, job=None, result=None):
 
         assert job is not None
 
-        if job.state == Objective.STATE_FAILED:
+        if job.state == Objective.STATE_ERROR:
             # dang, this job seems like a failed one.
             assert result is None
-            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_ERROR)
             return
 
         assert result is not None
@@ -100,7 +100,7 @@ def nlu_score(objective, job=None, result=None):
             provider = get_provider()
             if provider is None:
                 # fast-lane exit...
-                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FAILED)
+                Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_ERROR)
                 return
 
             j = Job.objects.create(objective_id=objective.pk, provider=provider)

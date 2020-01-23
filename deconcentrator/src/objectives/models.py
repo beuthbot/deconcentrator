@@ -56,7 +56,8 @@ class Method(PackagedMethodModel):
         """
 
         try:
-            self.function(job)
+            fn = self.function
+            fn(job)
 
         except Exception:
             # ow snag. be sure to mark this one as failed.

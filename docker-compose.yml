@@ -11,6 +11,9 @@ x-deconcentrator: &deconcentrator
   environment:
     - SECRET_KEY_FILE=/run/secrets/secret-key
     - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
+    - DEBUG
+    - ALLOWED_HOSTS
+    - PROVIDER_RASA_ENDPOINT
   secrets:
     - secret-key
     - postgres-passwd
@@ -25,16 +28,10 @@ services:
     <<: *deconcentrator
     volumes:
       - static:/mnt/static
-    environment:
-      - DEBUG
-      - ALLOWED_HOSTS
-      - PROVIDER_RASA_ENDPOINT
 
   worker:
     <<: *deconcentrator
     command: celery -A deconcentrator worker
-    environment:
-      - DEBUG
 
   redis:
     <<: *defaults

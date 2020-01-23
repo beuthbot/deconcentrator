@@ -2,6 +2,7 @@
 
 FILES="secret.key postgres.passwd"
 ACTION="$(basename ${0})"
+SELF="$(realpath ${ACTION})"
 
 if [ "management.sh" == "${ACTION}" ]; then
 	ACTION="${1}"
@@ -22,7 +23,7 @@ case "${ACTION}" in
 
 	cleanup)
 		set -e
-		./down -v
+		${SELF} down -v
 		exec rm -vf ${FILES}
 		;;
 

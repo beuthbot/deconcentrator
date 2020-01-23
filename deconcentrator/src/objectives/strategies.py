@@ -105,9 +105,7 @@ def nlu_score(objective, job=None, result=None):
                 return
 
             Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_QUEUED)
-
-            j = Job.objects.create(objective_id=objective.pk, provider=provider)
-            j.save()
+            Job.objects.create(objective_id=objective.pk, provider=provider)
 
     if objective.state == Objective.STATE_CREATED:
         assert job is None

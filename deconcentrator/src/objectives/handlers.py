@@ -67,3 +67,4 @@ def post_save_hook(sender, instance, created, raw, **kwArgs):
     # NOTE: instance might be an `Objective` as well as an `Job` or even a `Result`, hence it's dispatching over to
     # multiple non-related types! in the end, that results in a call to the respective strategy for post-processing.
     instance.execute()
+    instance.refresh_from_db()

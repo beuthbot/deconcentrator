@@ -7,7 +7,7 @@ x-defaults: &defaults
 
 x-deconcentrator: &deconcentrator
   <<: *defaults
-  image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator:0.0.1
+  image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator
   environment:
     - SECRET_KEY_FILE=/run/secrets/secret-key
     - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd

@@ -2,4 +2,3 @@ version: '3.7'
 services:
   uwsgi:
     build: deconcentrator
-    image: registry.elitehost.biz/beuthmaster/masterprojekt/deconcentrator:0.0.2

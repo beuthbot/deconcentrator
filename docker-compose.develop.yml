@@ -4,15 +4,15 @@ services:
     volumes:
       - ./deconcentrator/src:/mnt/deconcentrator:rw
     environment:
-      - DEBUG=True
-      - ALLOWED_HOSTS=localhost
-      - PROVIDER_RASA_ENDPOINT=http://rasa.beuthbot.dev/model/parse
+      - DEBUG
+      - ALLOWED_HOSTS
+      - PROVIDER_RASA_ENDPOINT
 
   worker:
     volumes:
       - ./deconcentrator/src:/mnt/deconcentrator:rw
     environment:
-      - DEBUG=True
+      - DEBUG
 
   traefik:
     image: traefik:v2.1

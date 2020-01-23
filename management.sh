@@ -9,7 +9,15 @@ if [ "management.sh" == "${ACTION}" ]; then
 	shift
 fi
 
+DEBUG="$(test -e .env && grep DEBUG .env | grep True)"
+
 function dc() {
+	if [ -z "${DEBUG}" ]; then
+		set -ex
+		exec docker-compose ${@}
+	fi
+
+	set -ex
 	exec docker-compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.develop.yml ${@}
 }
 
@@ -28,7 +36,6 @@ case "${ACTION}" in
 		;;
 
 	*)
-		set -ex
 		dc ${ACTION} ${@}
 
 esac

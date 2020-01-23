@@ -42,10 +42,10 @@ def evaluate_task(jid):
 
         Result.objects.create(job=job, payload=postprocess_rasa_response(response))
 
-    except Exception:
+    except Exception as e:
         Job.objects.filter(pk=job.pk).update(state=Objective.STATE_ERROR)
         job.refresh_from_db()
-        logger.exception("Unable to evaluate, no hope left.")
+        logger.exception("Unable to evaluate, no hope left.", exc_info=e)
 
 
 @shared_task(time_limit=7)

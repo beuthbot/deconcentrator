@@ -8,7 +8,6 @@ def post_migrate_hook(*args, **kwArgs):
     def _init_method_provider():
         from .models import Method, Provider
 
-        logger.debug("post_migrate_hook: ensuring `evaluate` method.")
         (method, _) = Method.objects.update_or_create(
             package="objectives.methods",
             method="evaluate",
@@ -16,7 +15,6 @@ def post_migrate_hook(*args, **kwArgs):
 
         idents = []
 
-        logger.debug("post_migrate_hook: seeking providers.")
         for k, v in os.environ.items():
             if not k.upper().startswith('PROVIDER_'):
                 continue
@@ -30,7 +28,6 @@ def post_migrate_hook(*args, **kwArgs):
             except ValueError:
                 continue
 
-            logger.debug("post_migrate_hook: ensuring provider %s", name)
             (provider, _) = Provider.objects.update_or_create(
                 name=name,
                 method=method,
@@ -46,7 +43,6 @@ def post_migrate_hook(*args, **kwArgs):
     def _init_strategy():
         from .models import Strategy
 
-        logger.debug("post_migrate_hook")
         for name in ['nlu_all', 'nlu_score']:
             (strategy, _) = Strategy.objects.update_or_create(
                 package='objectives.strategies',
@@ -63,7 +59,6 @@ def post_save_hook(sender, instance, created, raw, **kwArgs):
         # don't work on objects that are created e. g. by migrations.
         return
 
-    logger.debug("post_save_hook: non-abc-dispatch call `.execute()`")
     # NOTE: instance might be an `Objective` as well as an `Job` or even a `Result`, hence it's dispatching over to
     # multiple non-related types! in the end, that results in a call to the respective strategy for post-processing.
     instance.execute()

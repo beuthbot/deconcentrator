@@ -162,3 +162,5 @@ def nlu_score(objective, job=None, result=None):
 
             job.callback()
             return
+
+    raise Exception("stray objective/job/result")

@@ -94,14 +94,6 @@ class Strategy(PackagedMethodModel):
 
     def execute(self, objective, job=None, result=None):
         """ call the defined method, to get (more) Jobs created. """
-        logger.debug(
-            "Strategy %s `.execute()`. Dispatching to method (objective: %r, job: %r, result: %r).",
-            self.ident,
-            objective,
-            job,
-            result
-        )
-
         try:
             assert "type" in objective.payload
             assert objective.payload["type"] in ("text", "audio")
@@ -148,18 +140,17 @@ class Objective(models.Model):
     def execute(self):
         """ use the strategy to create jobs for this Objective. """
         if self.state not in Objective.STATES_PROCESSING:
-            logger.debug("`Objective.execute()` called with state=%r, returning", self.state)
+            logger.warning("%r not in processing mode, instead %r", self, self.state)
             return
 
         if self.strategy is None:
-            logger.debug("`Objective.execute()` called with strategy=%r, returning", self.strategy)
+            logger.warning("%r has no strategy, returning", self)
             return
 
-        logger.debug("`Objective.execute()` called with state=%r, dispatching to strategy", self.state)
         self.strategy.execute(self)
 
     def __str__(self):
-        return _("oid_{pk}").format(pk=self.pk)
+        return _("oid_{pk}, state_{state}").format(pk=self.pk, state=self.get_state_display())
 
 
 class Job(models.Model):
@@ -177,7 +168,6 @@ class Job(models.Model):
 
     def execute(self):
         """ use the provider to actually get this objective translated. """
-        logger.debug("`Job.execute()` called, dispatching to strategy")
         self.objective.strategy.execute(self.objective, self)
 
     def callback(self):
@@ -185,7 +175,7 @@ class Job(models.Model):
         do_callback(self)
 
     def __str__(self):
-        return _("jid_{pk}").format(pk=self.pk)
+        return _("jid_{pk}, state_{state}").format(pk=self.pk, state=self.get_state_display())
 
 
 class Result(models.Model):
@@ -197,7 +187,6 @@ class Result(models.Model):
 
     def execute(self):
         """ allow the strategy to actually decide to spawn a new job. """
-        logger.debug("`Result.execute()` called, dispatching to strategy")
         self.job.objective.strategy.execute(self.job.objective, self.job, self)
 
     def __str__(self):

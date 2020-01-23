@@ -62,7 +62,6 @@ class Method(PackagedMethodModel):
         except Exception:
             # ow snag. be sure to mark this one as failed.
             # but be sure to work on the most up2date data.
-            from objectives.models import Objective, Job
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_ERROR)
             raise
 

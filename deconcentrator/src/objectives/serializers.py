@@ -47,4 +47,3 @@ class ObjectiveSerializer(serializers.ModelSerializer):
         model = Objective
         fields = '__all__'
 
-

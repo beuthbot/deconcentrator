@@ -3,16 +3,10 @@ services:
   uwsgi:
     volumes:
       - ./deconcentrator/src:/mnt/deconcentrator:rw
-    environment:
-      - DEBUG
-      - ALLOWED_HOSTS
-      - PROVIDER_RASA_ENDPOINT
 
   worker:
     volumes:
       - ./deconcentrator/src:/mnt/deconcentrator:rw
-    environment:
-      - DEBUG
 
   traefik:
     image: traefik:v2.1

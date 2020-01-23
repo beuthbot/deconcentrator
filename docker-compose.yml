@@ -25,10 +25,16 @@ services:
     <<: *deconcentrator
     volumes:
       - static:/mnt/static
+    environment:
+      - DEBUG
+      - ALLOWED_HOSTS
+      - PROVIDER_RASA_ENDPOINT
 
   worker:
     <<: *deconcentrator
     command: celery -A deconcentrator worker
+    environment:
+      - DEBUG
 
   redis:
     <<: *defaults

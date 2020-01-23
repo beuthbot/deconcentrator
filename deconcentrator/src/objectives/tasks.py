@@ -1,5 +1,6 @@
 import logging
 import requests
+import json
 
 from celery import shared_task
 
@@ -9,6 +10,8 @@ from rest_framework.renderers import JSONRenderer
 logger = logging.getLogger("deconcentrator.objectives.tasks")
 
 
+def postprocess_rasa_response(response):
+    return response.json()
 @shared_task(time_limit=7, acks_late=True)
 def evaluate_task(jid):
     # basically made for https://rasa.com/docs/rasa/api/http-api/#operation/parseModelMessage
@@ -25,18 +28,24 @@ def evaluate_task(jid):
         return
 
     try:
+        payload = Proxy(job.objective).data
+
         response = requests.post(
             job.provider.kwargs.pop('endpoint'),
-            data=dict(text=Proxy(job.objective).data),
+            headers={'content-type': 'application/json'},
+            data=json.dumps(dict(text=payload)),
             timeout=job.provider.kwargs.pop('timeouts', (2.0, 5.0))
         )
 
-        Result(job=job, payload=response).save()
+        Job.objects.filter(pk=job.pk).update(state=Objective.STATE_PROCESSING)
+        job.refresh_from_db()
+
+        Result.objects.create(job=job, payload=postprocess_rasa_response(response))
 
     except Exception:
         Job.objects.filter(pk=job.pk).update(state=Objective.STATE_ERROR)
-        job.save()
-        raise
+        job.refresh_from_db()
+        logger.exception("Unable to evaluate, no hope left.")
 
 
 @shared_task(time_limit=7)
@@ -47,8 +56,12 @@ def callback_task(jid):
     from objectives.serializers import ObjectiveSerializer
     job = Job.objects.get(jid)
 
+    url = job.objective.kwargs.get('callback', '')
+    if len(url) < 1:
+        return
+
     requests.post(
-        job.provider.kwargs.pop('callback'),
+        job.objective.kwargs.pop('callback'),
         data=JSONRenderer().render(ObjectiveSerializer(job.objective).data),
-        timeout=job.providers.kwargs.pop('timeouts', (2.0, 5.0))
+        timeout=job.objective.kwargs.pop('callback_timeouts', (2.0, 5.0))
     )

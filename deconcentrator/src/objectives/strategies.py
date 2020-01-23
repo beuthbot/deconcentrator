@@ -104,35 +104,49 @@ def nlu_score(objective, job=None, result=None):
                 Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_ERROR)
                 return
 
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_QUEUED)
+
             j = Job.objects.create(objective_id=objective.pk, provider=provider)
             j.save()
 
-            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_QUEUED)
-
     if objective.state == Objective.STATE_CREATED:
+        assert job is None
+        assert result is None
+
         # step one: create first job for the given objective using the first provider.
+        logger.debug("score(%r, %r, %r): creating initial job", objective, job, result)
 
         schedule_or_fail()
         return
 
     if objective.state == Objective.STATE_QUEUED:
+        assert job is not None
+        assert result is None
+
         # step two: start calling the provider.
+        logger.debug("score(%r, %r, %r): dispatching job execution", objective, job, result)
 
         with transaction.atomic():
+            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_PROCESSING)
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_QUEUED)
             job.refresh_from_db()
             job.provider.execute(job)
-            Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_PROCESSING)
             return
 
     if objective.state == Objective.STATE_PROCESSING:
         # step three: maybe results coming in.
 
-        if job.state == Objective.STATE_FAILED:
+        if job.state == Objective.STATE_ERROR:
             # dang, this job seems like a failed one.
             # let's see, if we have another option left.
+            logger.debug("score(%r, %r, %r): rescheduling because of failed job", objective, job, result)
             assert result is None
             schedule_or_fail()
+            return
+
+        if job.state == Objective.STATE_QUEUED:
+            logger.debug("score(%r, %r, %r): job still queued, skipping", objective, job, result)
+            assert result is None
             return
 
         assert result is not None
@@ -141,9 +155,11 @@ def nlu_score(objective, job=None, result=None):
             Job.objects.filter(pk=job.pk).update(state=Objective.STATE_FINISHED)
             score = objective.kwargs.pop('confidence_score')
             if result.payload["intent"]["confidence"] > score:
+                logger.debug("score(%r, %r, %r): sufficient score", objective, job, result)
                 Objective.objects.filter(pk=objective.pk).update(state=Objective.STATE_FINISHED)
 
             else:
+                logger.debug("score(%r, %r, %r): rescheduling because of insufficient score", objective, job, result)
                 schedule_or_fail()
 
             job.callback()

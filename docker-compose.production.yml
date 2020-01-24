@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  nginx:
+    image: nginx:1.17-alpine
+    networks:
+      - internal
+    volumes:
+      - ./site.nginx:/etc/nginx/conf.d/default.conf:ro
+      - static:/mnt/static
+    ports:
+      - 8338:80
+    depends_on:
+      - uwsgi

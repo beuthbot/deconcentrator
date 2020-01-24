@@ -9,3 +9,4 @@ run
 up
 .idea/
 **/__pycache__
+docker-compose.override.yml
